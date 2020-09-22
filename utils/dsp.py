@@ -47,11 +47,26 @@ def build_mel_basis():
     return librosa.filters.mel(hp.sample_rate, hp.n_fft, n_mels=hp.num_mels, fmin=hp.fmin)
 '''
 
-def normalize(S):
-    return np.clip((S - hp.min_level_db) / -hp.min_level_db, 0, 1)
+def normalize(S, max_s):
+    S = np.power(S/max_s, hp.preemphasis)
+    S = np.clip(S, 0, 1)
+
+    return S
 
 
 def denormalize(S):
+    max_s = np.load(hp.max_s_path)
+    S = np.power(S, hp.deemphasis/hp.preemphasis)
+    S = max_s*S
+
+    return S
+
+
+def db_normalize(S):
+    return np.clip((S - hp.min_level_db) / -hp.min_level_db, 0, 1)
+
+
+def db_denormalize(S):
     return (np.clip(S, 0, 1) * -hp.min_level_db) + hp.min_level_db
 
 
@@ -65,14 +80,35 @@ def db_to_amp(x):
 
 def spectrogram(y):
     D = stft(y)
-    S = amp_to_db(np.abs(D)) - hp.ref_level_db
-    return normalize(S)
+    if hp.norm_type == 'db':
+        S = amp_to_db(np.abs(D)) - hp.ref_level_db
+        S = db_normalize(S)
+    elif hp.norm_type == 'linear':
+        max_s = db_to_amp(hp.ref_level_db)
+        S = np.abs(D)
+        S = normalize(S, max_s)
+    elif hp.norm_type == 'max':
+        max_s = np.load(hp.max_s_path)
+        S = np.abs(D)
+        S = normalize(S, max_s)
+
+    return S
 
 
 def melspectrogram(y):
     D = stft(y)
-    S = amp_to_db(linear_to_mel(np.abs(D)))
-    return normalize(S)
+    if hp.norm_type == 'db':
+        S = amp_to_db(linear_to_mel(np.abs(D)))
+        S = db_normalize(S)
+    elif hp.norm_type == 'linear':
+        S = linear_to_mel(np.abs(D))
+        S = normalize(S, 1.0)
+    elif hp.norm_type == 'max':
+        max_s = np.load(hp.max_s_path)
+        S = linear_to_mel(np.abs(D))
+        S = normalize(S, max_s)
+
+    return S
 
 
 def stft(y):
