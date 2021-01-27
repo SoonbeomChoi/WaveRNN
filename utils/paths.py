@@ -14,17 +14,17 @@ class Paths:
         self.gta = self.data/'gta'
 
         # WaveRNN/Vocoder Paths
-        self.voc_checkpoints = self.base/'checkpoints'/f'{voc_id}.wavernn'
-        self.voc_latest_weights = self.voc_checkpoints/'latest_weights.pyt'
-        self.voc_latest_optim = self.voc_checkpoints/'latest_optim.pyt'
-        self.voc_output = self.base/'model_outputs'/f'{voc_id}.wavernn'
+        self.voc_checkpoints = self.base/'checkpoints'/f'{voc_id}'
+        self.voc_latest_weights = self.voc_checkpoints/'latest_weights.pt'
+        self.voc_latest_optim = self.voc_checkpoints/'latest_optim.pt'
+        self.voc_output = self.base/'model_outputs'/f'{voc_id}'
         self.voc_step = self.voc_checkpoints/'step.npy'
         self.voc_log = self.voc_checkpoints/'log.txt'
 
         # Tactron/TTS Paths
         self.tts_checkpoints = self.base/'checkpoints'/f'{tts_id}.tacotron'
-        self.tts_latest_weights = self.tts_checkpoints/'latest_weights.pyt'
-        self.tts_latest_optim = self.tts_checkpoints/'latest_optim.pyt'
+        self.tts_latest_weights = self.tts_checkpoints/'latest_weights.pt'
+        self.tts_latest_optim = self.tts_checkpoints/'latest_optim.pt'
         self.tts_output = self.base/'model_outputs'/f'{tts_id}.tacotron'
         self.tts_step = self.tts_checkpoints/'step.npy'
         self.tts_log = self.tts_checkpoints/'log.txt'

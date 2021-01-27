@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 import torch
@@ -6,6 +7,7 @@ import torch.nn.functional as F
 from utils.display import stream, simple_table
 from utils.dataset import get_vocoder_datasets
 from utils.distribution import discretized_mix_logistic_loss
+from utils.train import AverageMeter, Logger
 from utils import hparams as hp
 from models.fatchord_version import WaveRNN
 from gen_wavernn import gen_testset
@@ -25,7 +27,10 @@ def main():
     parser.add_argument('--gta', '-g', action='store_true', help='train wavernn on GTA features')
     parser.add_argument('--force_cpu', '-c', action='store_true', help='Forces CPU-only training, even when in CUDA capable environment')
     parser.add_argument('--hp_file', metavar='FILE', default='hparams.py', help='The file to use for the hyperparameters')
+    parser.add_argument('--device', type=str, default="0", help='The indices of CUDA visible device')
     args = parser.parse_args()
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.device
 
     hp.configure(args.hp_file)  # load hparams from file
     if args.lr is None:
@@ -68,6 +73,9 @@ def main():
     assert np.cumprod(hp.voc_upsample_factors)[-1] == hp.hop_length
 
     optimizer = optim.Adam(voc_model.parameters())
+    scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=hp.voc_step_size, gamma=hp.voc_gamma)
+    logger = Logger(paths.voc_checkpoints)
+
     restore_checkpoint('voc', paths, voc_model, optimizer, create_if_missing=True)
 
     train_set, test_set = get_vocoder_datasets(paths.data, batch_size, train_gta)
@@ -82,13 +90,13 @@ def main():
 
     loss_func = F.cross_entropy if voc_model.mode == 'RAW' else discretized_mix_logistic_loss
 
-    voc_train_loop(paths, voc_model, loss_func, optimizer, train_set, test_set, lr, total_steps)
+    voc_train_loop(paths, voc_model, loss_func, optimizer, scheduler, logger, train_set, test_set, lr, total_steps)
 
     print('Training Complete.')
     print('To continue training increase voc_total_steps in hparams.py or use --force_train')
 
 
-def voc_train_loop(paths: Paths, model: WaveRNN, loss_func, optimizer, train_set, test_set, lr, total_steps):
+def voc_train_loop(paths: Paths, model: WaveRNN, loss_func, optimizer, scheduler, logger, train_set, test_set, lr, total_steps):
     # Use same device as model parameters
     device = next(model.parameters()).device
 
@@ -97,6 +105,7 @@ def voc_train_loop(paths: Paths, model: WaveRNN, loss_func, optimizer, train_set
     total_iters = len(train_set)
     epochs = (total_steps - model.get_step()) // total_iters + 1
 
+    loss_train = AverageMeter()
     for e in range(1, epochs + 1):
 
         start = time.time()
@@ -129,6 +138,8 @@ def voc_train_loop(paths: Paths, model: WaveRNN, loss_func, optimizer, train_set
                 if np.isnan(grad_norm):
                     print('grad_norm was NaN!')
             optimizer.step()
+            scheduler.step()
+            logger.log_loss(loss, loss_train.steps)
 
             running_loss += loss.item()
             avg_loss = running_loss / i
@@ -141,7 +152,7 @@ def voc_train_loop(paths: Paths, model: WaveRNN, loss_func, optimizer, train_set
             if step % hp.voc_checkpoint_every == 0:
                 gen_testset(model, test_set, hp.voc_gen_at_checkpoint, hp.voc_gen_batched,
                             hp.voc_target, hp.voc_overlap, paths.voc_output)
-                ckpt_name = f'wave_step{k}K'
+                ckpt_name = f'wavernn{k}k'
                 save_checkpoint('voc', paths, model, optimizer,
                                 name=ckpt_name, is_silent=True)
 
