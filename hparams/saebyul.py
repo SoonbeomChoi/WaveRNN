@@ -3,7 +3,7 @@
 
 # Here are the input and output data paths (Note: you can override wav_path in preprocess.py)
 wav_path = ['../Dataset/saebyul_split/train']
-data_path = 'data/'
+data_path = 'data/saebyul'
 
 # model ids are separate - that way you can use a new tts with an old wavernn and vice versa
 # NB: expect undefined behaviour if models were trained on different DSP settings
@@ -44,13 +44,17 @@ voc_compute_dims = 128
 voc_res_out_dims = 128
 voc_res_blocks = 10
 
+# Optimizer
+voc_lr = 1e-4
+voc_step_size = 1.0e+5
+voc_gamma = 0.75
+
 # Training
 voc_batch_size = 96
-voc_lr = 1e-4
 voc_checkpoint_every = 25_000
 voc_gen_at_checkpoint = 5           # number of samples to generate at each checkpoint
-voc_total_steps = 1_000_000         # Total number of training steps
-voc_test_samples = 50               # How many unseen samples to put aside for testing
+voc_total_steps = 2_000_000         # Total number of training steps
+voc_test_samples = 5                # How many unseen samples to put aside for testing
 voc_pad = 2                         # this will pad the input so that the resnet can 'see' wider than input length
 voc_seq_len = hop_length * 5        # must be a multiple of hop_length
 voc_clip_grad_norm = 4              # set to None if no gradient clipping needed
