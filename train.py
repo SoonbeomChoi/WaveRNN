@@ -10,7 +10,7 @@ from utils.distribution import discretized_mix_logistic_loss
 from utils.train import AverageMeter, Logger
 from utils import hparams as hp
 from models.fatchord_version import WaveRNN
-from gen_wavernn import gen_testset
+from generate import gen_testset
 from utils.paths import Paths
 import argparse
 from utils import data_parallel_workaround
@@ -135,11 +135,11 @@ def voc_train_loop(paths: Paths, model: WaveRNN, loss_func, optimizer, scheduler
             loss.backward()
             if hp.voc_clip_grad_norm is not None:
                 grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), hp.voc_clip_grad_norm)
-                if np.isnan(grad_norm):
+                if np.isnan(grad_norm.cpu().numpy()):
                     print('grad_norm was NaN!')
             optimizer.step()
             scheduler.step()
-            logger.log_loss(loss, loss_train.steps)
+            logger.log(loss, scheduler.get_last_lr()[0], loss_train.steps)
 
             running_loss += loss.item()
             avg_loss = running_loss / i
