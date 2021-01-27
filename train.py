@@ -128,7 +128,6 @@ def voc_train_loop(paths: Paths, model: WaveRNN, loss_func, optimizer, scheduler
 
             y = y.unsqueeze(-1)
 
-
             loss = loss_func(y_hat, y)
 
             optimizer.zero_grad()
@@ -139,6 +138,7 @@ def voc_train_loop(paths: Paths, model: WaveRNN, loss_func, optimizer, scheduler
                     print('grad_norm was NaN!')
             optimizer.step()
             scheduler.step()
+            loss_train.step(loss.item(), train_set.batch_size)
             logger.log(loss, scheduler.get_last_lr()[0], loss_train.steps)
 
             running_loss += loss.item()
