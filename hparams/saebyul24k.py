@@ -46,8 +46,8 @@ voc_res_blocks = 10
 
 # Optimizer
 voc_lr = 1e-4
-voc_step_size = 1.0e+5
-voc_gamma = 0.75
+voc_step_size = 1.0e+4
+voc_gamma = 0.97
 
 # Training
 voc_batch_size = 96
