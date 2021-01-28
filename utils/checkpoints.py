@@ -71,7 +71,7 @@ def save_checkpoint(checkpoint_type: str, paths: Paths, model, optimizer, *,
     if name:
         named_paths = {
             'w': checkpoint_path/f'{name}.pt',
-            'o': checkpoint_path/f'{name}.pt',
+            'o': checkpoint_path/f'{name}_optim.pt',
         }
         helper(named_paths, True)
 
@@ -103,8 +103,8 @@ def restore_checkpoint(checkpoint_type: str, paths: Paths, model, optimizer, *,
 
     if name:
         path_dict = {
-            'w': checkpoint_path/f'{name}_weights.pyt',
-            'o': checkpoint_path/f'{name}_optim.pyt',
+            'w': checkpoint_path/f'{name}.pt',
+            'o': checkpoint_path/f'{name}_optim.pt',
         }
         s = 'named'
     else:
