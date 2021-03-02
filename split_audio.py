@@ -8,9 +8,10 @@ from torchaudio.transforms import Resample
 from midi_xt import load_midi
 
 config = {
-    "dataset_path": '../Dataset/sk_multi_singer',
-    "singer_list": ['saebyul', 'female_style1', 'female_style2', 'male_style1', 'male_style2', 'younha', 'swja', 'gwangseok'],
-    "save_path": '../Dataset/sk_multi_singer_split',
+    "dataset_path": '../Dataset',
+    "singer_list": ['saebyul_dataset', 'english_dataset'], #['saebyul', 'female_style1', 'female_style2', 'male_style1', 'male_style2', 'younha', 'swja', 'gwangseok'],
+    "save_path": '../Dataset/saebyul_split',
+    "make_singer_path": False,
     "sample_rate": 44100,
 
     # Split audio by amp
@@ -22,9 +23,9 @@ config = {
     "low_ratio": 1.0, # Low energy ratio within min length
 
     # Split audio by MIDI
-    "min_length_midi": 2.5, # Min audio length in second
-    "max_length_midi": 15.0, # Max audio length in second
-    "min_silence": 0.3, # Min silence length in second
+    "min_length_midi": 1.5, # Min audio length in second
+    "max_length_midi": 12.0, # Max audio length in second
+    "min_silence": 0.4, # Min silence length in second
     "max_silence": 1.0, # Max silence length in second
     "offset_threshold": 0.2, 
     "mono": True
@@ -93,7 +94,11 @@ def split_audio_by_amp(filename, set_name='train'):
 
                 singer = filename.split('/')[-3]
                 basename = os.path.basename(filename).replace('.wav', '_' + str(index) + '.wav')
-                savename = os.path.join(config["save_path"], set_name, singer, basename)
+                if config["make_singer_path"]:
+                    savename = os.path.join(config["save_path"], set_name, singer, basename)
+                else:
+                    savename = os.path.join(config["save_path"], set_name, basename)
+
                 torchaudio.save(savename, y_split, config["sample_rate"])
 
                 y_split = y_next
@@ -159,7 +164,11 @@ def split_audio_by_midi(filename, midi, set_name='train'):
 
             singer = filename.split('/')[-3]
             basename = os.path.basename(filename).replace('.wav', '_' + str(index) + '.wav')
-            savename = os.path.join(config["save_path"], set_name, singer, basename)
+            if config["make_singer_path"]:
+                savename = os.path.join(config["save_path"], set_name, singer, basename)
+            else:
+                savename = os.path.join(config["save_path"], set_name, basename)
+            
             torchaudio.save(savename, y_split, config["sample_rate"])
             index += 1
 
